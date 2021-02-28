@@ -141,7 +141,7 @@ func main() {
 		}
 		wg.Wait()
 	} else {
-		replica(paxi.ID(*id))
 		go cpuUtilization(paxi.ID(*id))
+		replica(paxi.ID(*id))	
 	}
 }
