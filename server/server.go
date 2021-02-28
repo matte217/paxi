@@ -3,6 +3,10 @@ package main
 import (
 	"flag"
 	"sync"
+	"io/ioutil"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/ailidani/paxi"
 	"github.com/ailidani/paxi/abd"
@@ -84,6 +88,46 @@ func replica(id paxi.ID) {
 	}
 }
 
+func getCpuSample() (idle uint64, total uint64) {
+	contents, err := ioutil.ReadFile("/proc/stat")
+	if err != nil {
+		log.Errorf("node %v proc stat read %v ", id, err)
+		return
+	}
+	lines := strings.Split(string(contents), "\n")
+	//cpu user nice system idle io irq softirq
+	for _, line := range(lines) {
+		fields := strings.Fields(line)
+		if fields[0] == "cpu" {
+			for i := 1; i < len(fields); i++ {
+				time, err := strconv.ParseUint(fields[i], 10, 64)
+				if err != nil {
+					log.Errorf("node %v Atoi error %s ", id, line)
+				}
+				total += time
+				if i == 4 {
+					idle = time
+				}
+			}
+			return
+		}
+	}
+	return
+}
+
+func cpuUtilization(id paxi.ID) {
+	idlePrev, totalPrev := getCpuSample()
+	for{
+		time.Sleep(1 * time.Second)
+		idleCurr, totalCurr := getCpuSample()
+		idleTime  := float64(idleCurr - idlePrev)
+		totalTime := float64(totalCurr - totalPrev)
+		cpuUtilization := 100 * (totalTime - idleTime)/totalTime
+		idlePrev, totalPrev = idleCurr, totalCurr
+		log.Infof("node %v CPU utilization: %f ", id, cpuUtilization)
+	}
+}
+
 func main() {
 	paxi.Init()
 
@@ -98,5 +142,6 @@ func main() {
 		wg.Wait()
 	} else {
 		replica(paxi.ID(*id))
+		go cpuUtilization(paxi.ID(*id))
 	}
 }
