@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"time"
 )
 
 // History client operation history mapped by key
@@ -18,6 +19,7 @@ type History struct {
 	sync.RWMutex
 	shard      map[int][]*operation
 	operations []*operation
+	totalTime  time.Duration
 }
 
 // NewHistory creates a History map
@@ -25,6 +27,7 @@ func NewHistory() *History {
 	return &History{
 		shard:      make(map[int][]*operation),
 		operations: make([]*operation, 0),
+		totalTime : time.Duration(0),
 	}
 }
 
@@ -35,7 +38,7 @@ func (h *History) Add(key int, input, output interface{}, start, end int64) {
 	if _, exists := h.shard[key]; !exists {
 		h.shard[key] = make([]*operation, 0)
 	}
-	o := &operation{input, output, start, end}
+	o := &operation{input, output, start, end, time.Duration(0)}
 	h.shard[key] = append(h.shard[key], o)
 	h.operations = append(h.operations, o)
 }
@@ -49,6 +52,14 @@ func (h *History) AddOperation(key int, o *operation) {
 	}
 	h.shard[key] = append(h.shard[key], o)
 	h.operations = append(h.operations, o)
+	h.totalTime += o.latency
+}
+
+// Returns the thrroughput based on the number of operations in history and total time for those requests
+func (h *History) getThroughput() float64 {
+	h.Lock()
+	defer h.Unlock()
+	return float64(len(h.operations))/h.totalTime.Seconds()
 }
 
 // Linearizable concurrently checks if each partition of the history is linearizable and returns the total number of anomaly reads

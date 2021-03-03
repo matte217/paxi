@@ -151,6 +151,7 @@ func (b *Benchmark) Run() {
 	}
 
 	b.db.Init()
+	//go b.printThroughput()
 	b.startTime = time.Now()
 	if b.T > 0 {
 		timer := time.NewTimer(time.Second * time.Duration(b.T))
@@ -265,6 +266,7 @@ func (b *Benchmark) worker(keys <-chan int, result chan<- time.Duration) {
 		op.start = s.Sub(b.startTime).Nanoseconds()
 		if err == nil {
 			op.end = e.Sub(b.startTime).Nanoseconds()
+			//op.latency = e.Sub(s)
 			result <- e.Sub(s)
 		} else {
 			op.end = math.MaxInt64
@@ -278,5 +280,12 @@ func (b *Benchmark) collect(latencies <-chan time.Duration) {
 	for t := range latencies {
 		b.latency = append(b.latency, t)
 		b.wait.Done()
+	}
+}
+
+func (b *Benchmark) printThroughput(){
+	for{
+		log.Infof("Throughput = %f\n", b.History.getThroughput())
+		time.Sleep(1 * time.Second)
 	}
 }

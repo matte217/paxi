@@ -1,6 +1,7 @@
 package paxi
 
 import "fmt"
+import "time"
 
 type operation struct {
 	input  interface{}
@@ -8,6 +9,7 @@ type operation struct {
 	// timestamps
 	start int64
 	end   int64
+	latency time.Duration
 }
 
 func (a operation) happenBefore(b operation) bool {
