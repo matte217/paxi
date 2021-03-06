@@ -59,6 +59,9 @@ func (h *History) AddOperation(key int, o *operation) {
 func (h *History) getThroughput() float64 {
 	h.Lock()
 	defer h.Unlock()
+	if len(h.operations) == 0 {
+		return 0
+	}
 	return float64(len(h.operations))/h.totalTime.Seconds()
 }
 

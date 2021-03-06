@@ -151,7 +151,7 @@ func (b *Benchmark) Run() {
 	}
 
 	b.db.Init()
-	//go b.printThroughput()
+	go b.printThroughput()
 	b.startTime = time.Now()
 	if b.T > 0 {
 		timer := time.NewTimer(time.Second * time.Duration(b.T))
@@ -266,7 +266,7 @@ func (b *Benchmark) worker(keys <-chan int, result chan<- time.Duration) {
 		op.start = s.Sub(b.startTime).Nanoseconds()
 		if err == nil {
 			op.end = e.Sub(b.startTime).Nanoseconds()
-			//op.latency = e.Sub(s)
+			op.latency = e.Sub(s)
 			result <- e.Sub(s)
 		} else {
 			op.end = math.MaxInt64
