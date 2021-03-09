@@ -39,7 +39,7 @@ func NewReplica(id paxi.ID) *Replica {
 		graph:        lib.NewGraph(),
 	}
 	for id := range paxi.GetConfig().Addrs {
-		r.log[id] = make(map[int]*instance, paxi.GetConfig().BufferSize)
+		r.log[id] = make(map[int]*instance, paxi.GetConfig().BufferSize * 1000)
 		r.slot[id] = -1
 		r.committed[id] = -1
 		r.executed[id] = -1
